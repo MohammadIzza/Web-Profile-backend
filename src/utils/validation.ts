@@ -18,11 +18,12 @@ export const profileSchema = z.object({
   title: z.string().optional(),
   bio: z.string().optional(),
   email: z.string().email().optional(),
+  phone: z.string().optional(),
   location: z.string().optional(),
-  avatar: z.string().url().optional().or(z.literal('')),
-  github: z.string().url().optional().or(z.literal('')),
-  linkedin: z.string().url().optional().or(z.literal('')),
-  twitter: z.string().url().optional().or(z.literal('')),
+  avatar: z.string().optional(),
+  github: z.string().optional(),
+  linkedin: z.string().optional(),
+  twitter: z.string().optional(),
 });
 
 // Portfolio Schemas
@@ -30,8 +31,8 @@ export const portfolioSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   image: z.string().optional(),
-  link: z.string().url().optional().or(z.literal('')),
-  github: z.string().url().optional().or(z.literal('')),
+  link: z.string().optional(),
+  github: z.string().optional(),
   tags: z.array(z.string()).default([]),
 });
 
