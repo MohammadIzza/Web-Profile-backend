@@ -11,7 +11,8 @@
     "generate": "bunx prisma generate"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.4"
+    "@types/bun": "^1.3.4",
+    "@types/pg": "^8.16.0"
   },
   "peerDependencies": {
     "typescript": "^5"

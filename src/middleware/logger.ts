@@ -1,0 +1,8 @@
+import { Elysia } from 'elysia';
+
+export const requestLogger = new Elysia()
+  .onRequest(({ request }) => {
+    const timestamp = new Date().toISOString();
+    const url = new URL(request.url);
+    console.log(`[${timestamp}] ${request.method} ${url.pathname}`);
+  });
