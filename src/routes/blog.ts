@@ -1,5 +1,7 @@
 import { Elysia } from 'elysia';
 import { prisma } from '../config/database';
+import { authMiddleware } from '../middleware/auth';
+import { blogSchema } from '../utils/validation';
 
 export const blogRoutes = new Elysia({ prefix: '/api/blog' })
   .get('/', async () => {
@@ -31,32 +33,44 @@ export const blogRoutes = new Elysia({ prefix: '/api/blog' })
     }
   })
   
-  .post('/', async ({ body }) => {
+  .use(authMiddleware)
+  
+  .post('/', async ({ body, set }) => {
     try {
+      const validatedData = blogSchema.parse(body);
       const blog = await prisma.blog.create({
-        data: body as any
+        data: validatedData
       });
       return blog;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating blog:', error);
+      set.status = 400;
+      if (error.errors) {
+        return { error: 'Validation failed', details: error.errors.map((e: any) => e.message) };
+      }
       return { error: 'Failed to create blog' };
     }
   })
   
-  .put('/:id', async ({ params, body }) => {
+  .put('/:id', async ({ params, body, set }) => {
     try {
+      const validatedData = blogSchema.partial().parse(body);
       const blog = await prisma.blog.update({
         where: { id: Number(params.id) },
-        data: body as any
+        data: validatedData
       });
       return blog;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating blog:', error);
+      set.status = 400;
+      if (error.errors) {
+        return { error: 'Validation failed', details: error.errors.map((e: any) => e.message) };
+      }
       return { error: 'Failed to update blog' };
     }
   })
   
-  .delete('/:id', async ({ params }) => {
+  .delete('/:id', async ({ params, set }) => {
     try {
       await prisma.blog.delete({
         where: { id: Number(params.id) }
@@ -64,6 +78,7 @@ export const blogRoutes = new Elysia({ prefix: '/api/blog' })
       return { message: 'Blog deleted successfully' };
     } catch (error) {
       console.error('Error deleting blog:', error);
+      set.status = 500;
       return { error: 'Failed to delete blog' };
     }
   });

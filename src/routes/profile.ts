@@ -1,5 +1,7 @@
 import { Elysia } from 'elysia';
 import { prisma } from '../config/database';
+import { authMiddleware } from '../middleware/auth';
+import { profileSchema } from '../utils/validation';
 
 export const profileRoutes = new Elysia({ prefix: '/api/profile' })
   .get('/', async () => {
@@ -29,32 +31,58 @@ export const profileRoutes = new Elysia({ prefix: '/api/profile' })
     }
   })
   
-  .post('/', async ({ body }) => {
+  .use(authMiddleware)
+  
+  .post('/', async ({ body, set }) => {
     try {
+      // Validate input
+      const validatedData = profileSchema.parse(body);
+      
       const profile = await prisma.profile.create({
-        data: body as any
+        data: validatedData
       });
       return profile;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating profile:', error);
+      set.status = 400;
+      
+      if (error.errors) {
+        return { 
+          error: 'Validation failed', 
+          details: error.errors.map((e: any) => e.message)
+        };
+      }
+      
       return { error: 'Failed to create profile' };
     }
   })
   
-  .put('/:id', async ({ params, body }) => {
+  .put('/:id', async ({ params, body, set }) => {
     try {
+      // Validate input
+      const validatedData = profileSchema.partial().parse(body);
+      
       const profile = await prisma.profile.update({
         where: { id: Number(params.id) },
-        data: body as any
+        data: validatedData
       });
       return profile;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
+      set.status = 400;
+      
+      if (error.errors) {
+        return { 
+          error: 'Validation failed', 
+          details: error.errors.map((e: any) => e.message)
+        };
+      }
+      
       return { error: 'Failed to update profile' };
     }
   })
   
-  .delete('/:id', async ({ params }) => {
+  .delete('/:id', async ({ params, set }) => {
     try {
       await prisma.profile.delete({
         where: { id: Number(params.id) }
@@ -62,6 +90,7 @@ export const profileRoutes = new Elysia({ prefix: '/api/profile' })
       return { message: 'Profile deleted successfully' };
     } catch (error) {
       console.error('Error deleting profile:', error);
+      set.status = 500;
       return { error: 'Failed to delete profile' };
     }
   });

@@ -1,5 +1,7 @@
 import { Elysia } from 'elysia';
 import { prisma } from '../config/database';
+import { authMiddleware } from '../middleware/auth';
+import { techStackSchema } from '../utils/validation';
 
 export const techstackRoutes = new Elysia({ prefix: '/api/techstack' })
   .get('/', async () => {
@@ -31,32 +33,44 @@ export const techstackRoutes = new Elysia({ prefix: '/api/techstack' })
     }
   })
   
-  .post('/', async ({ body }) => {
+  .use(authMiddleware)
+  
+  .post('/', async ({ body, set }) => {
     try {
+      const validatedData = techStackSchema.parse(body);
       const techstack = await prisma.techStack.create({
-        data: body as any
+        data: validatedData
       });
       return techstack;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating tech stack:', error);
+      set.status = 400;
+      if (error.errors) {
+        return { error: 'Validation failed', details: error.errors.map((e: any) => e.message) };
+      }
       return { error: 'Failed to create tech stack' };
     }
   })
   
-  .put('/:id', async ({ params, body }) => {
+  .put('/:id', async ({ params, body, set }) => {
     try {
+      const validatedData = techStackSchema.partial().parse(body);
       const techstack = await prisma.techStack.update({
         where: { id: Number(params.id) },
-        data: body as any
+        data: validatedData
       });
       return techstack;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating tech stack:', error);
+      set.status = 400;
+      if (error.errors) {
+        return { error: 'Validation failed', details: error.errors.map((e: any) => e.message) };
+      }
       return { error: 'Failed to update tech stack' };
     }
   })
   
-  .delete('/:id', async ({ params }) => {
+  .delete('/:id', async ({ params, set }) => {
     try {
       await prisma.techStack.delete({
         where: { id: Number(params.id) }
@@ -64,6 +78,7 @@ export const techstackRoutes = new Elysia({ prefix: '/api/techstack' })
       return { message: 'Tech stack deleted successfully' };
     } catch (error) {
       console.error('Error deleting tech stack:', error);
+      set.status = 500;
       return { error: 'Failed to delete tech stack' };
     }
   });

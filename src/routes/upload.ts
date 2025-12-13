@@ -2,6 +2,7 @@ import { Elysia } from 'elysia';
 import { existsSync } from 'fs';
 import { mkdir } from 'fs/promises';
 import path from 'path';
+import { authMiddleware } from '../middleware/auth';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
@@ -11,13 +12,28 @@ if (!existsSync(UPLOAD_DIR)) {
 }
 
 export const uploadRoutes = new Elysia()
-  .post('/api/upload', async ({ body }) => {
+  .use(authMiddleware)
+  .post('/api/upload', async ({ body, set }) => {
     try {
       const formData = body as any;
       const file = formData.file;
       
       if (!file) {
+        set.status = 400;
         return { error: 'No file provided' };
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        set.status = 400;
+        return { error: 'Invalid file type. Only images are allowed' };
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        set.status = 400;
+        return { error: 'File too large. Maximum size is 5MB' };
       }
 
       const fileName = `${Date.now()}-${file.name}`;
@@ -31,6 +47,7 @@ export const uploadRoutes = new Elysia()
       };
     } catch (error) {
       console.error('Error uploading file:', error);
+      set.status = 500;
       return { error: 'Failed to upload file' };
     }
   })

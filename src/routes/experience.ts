@@ -1,5 +1,7 @@
 import { Elysia } from 'elysia';
 import { prisma } from '../config/database';
+import { authMiddleware } from '../middleware/auth';
+import { experienceSchema } from '../utils/validation';
 
 export const experienceRoutes = new Elysia({ prefix: '/api/experience' })
   .get('/', async () => {
@@ -31,32 +33,44 @@ export const experienceRoutes = new Elysia({ prefix: '/api/experience' })
     }
   })
   
-  .post('/', async ({ body }) => {
+  .use(authMiddleware)
+  
+  .post('/', async ({ body, set }) => {
     try {
+      const validatedData = experienceSchema.parse(body);
       const experience = await prisma.experience.create({
-        data: body as any
+        data: validatedData
       });
       return experience;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating experience:', error);
+      set.status = 400;
+      if (error.errors) {
+        return { error: 'Validation failed', details: error.errors.map((e: any) => e.message) };
+      }
       return { error: 'Failed to create experience' };
     }
   })
   
-  .put('/:id', async ({ params, body }) => {
+  .put('/:id', async ({ params, body, set }) => {
     try {
+      const validatedData = experienceSchema.partial().parse(body);
       const experience = await prisma.experience.update({
         where: { id: Number(params.id) },
-        data: body as any
+        data: validatedData
       });
       return experience;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating experience:', error);
+      set.status = 400;
+      if (error.errors) {
+        return { error: 'Validation failed', details: error.errors.map((e: any) => e.message) };
+      }
       return { error: 'Failed to update experience' };
     }
   })
   
-  .delete('/:id', async ({ params }) => {
+  .delete('/:id', async ({ params, set }) => {
     try {
       await prisma.experience.delete({
         where: { id: Number(params.id) }
@@ -64,6 +78,7 @@ export const experienceRoutes = new Elysia({ prefix: '/api/experience' })
       return { message: 'Experience deleted successfully' };
     } catch (error) {
       console.error('Error deleting experience:', error);
+      set.status = 500;
       return { error: 'Failed to delete experience' };
     }
   });

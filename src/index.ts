@@ -3,6 +3,7 @@ import { cors } from '@elysiajs/cors';
 import { config } from './config/env';
 import { requestLogger } from './middleware/logger';
 import { errorHandler } from './middleware/errorHandler';
+import { authRoutes } from './routes/auth';
 import { profileRoutes } from './routes/profile';
 import { portfolioRoutes } from './routes/portfolio';
 import { blogRoutes } from './routes/blog';
@@ -14,6 +15,7 @@ const app = new Elysia()
   .use(cors(config.cors))
   .use(requestLogger)
   .use(errorHandler)
+  .use(authRoutes)
   .use(uploadRoutes)
   .use(profileRoutes)
   .use(portfolioRoutes)
