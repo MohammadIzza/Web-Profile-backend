@@ -12,7 +12,6 @@ import { experienceRoutes } from './routes/experience';
 import { techstackRoutes } from './routes/techstack';
 import { uploadRoutes } from './routes/upload';
 
-// Validate environment variables before starting
 validateEnv();
 
 const app = new Elysia()
@@ -27,6 +26,9 @@ const app = new Elysia()
   .use(experienceRoutes)
   .use(techstackRoutes);
 
+app.get('/', () => ({ ok: true, service: 'web-profile-backend' }));
+app.get('/health', () => 'ok');
+
 app.listen(config.port);
 
-console.log(`🚀 Backend running on http://localhost:${config.port}`);
+console.log(`🚀 Backend running on port ${config.port}`);
