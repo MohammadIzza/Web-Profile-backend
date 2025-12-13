@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia';
 import bcrypt from 'bcryptjs';
+import { rateLimit } from 'elysia-rate-limit';
 import { prisma } from '../config/database';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { loginSchema } from '../utils/validation';
@@ -14,7 +15,18 @@ const users = [
   }
 ];
 
+// Rate limiter for login endpoint
+const loginRateLimit = rateLimit({
+  duration: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Max 5 requests per 15 minutes
+  generator: (req, server) => {
+    // Use IP address as identifier
+    return server?.requestIP(req)?.address || 'unknown';
+  },
+});
+
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
+  .use(loginRateLimit)
   .post('/login', async ({ body, set }) => {
     try {
       // Validate input

@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { config } from './config/env';
+import { validateEnv } from './utils/validateEnv';
 import { requestLogger } from './middleware/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
@@ -10,6 +11,9 @@ import { blogRoutes } from './routes/blog';
 import { experienceRoutes } from './routes/experience';
 import { techstackRoutes } from './routes/techstack';
 import { uploadRoutes } from './routes/upload';
+
+// Validate environment variables before starting
+validateEnv();
 
 const app = new Elysia()
   .use(cors(config.cors))
