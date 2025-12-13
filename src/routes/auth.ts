@@ -5,16 +5,6 @@ import { prisma } from '../config/database';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { loginSchema } from '../utils/validation';
 
-// In-memory user store (for demo - production should use database)
-const users = [
-  {
-    id: 1,
-    username: 'admin',
-    password: '$2a$10$YourHashedPasswordHere', // Will be set on first login
-    email: 'admin@portfolio.com',
-  }
-];
-
 // Rate limiter for login endpoint
 const loginRateLimit = rateLimit({
   duration: 15 * 60 * 1000, // 15 minutes
@@ -33,17 +23,14 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       const validatedData = loginSchema.parse(body);
       const { username, password } = validatedData;
 
-      // Find user (in production, query from database)
-      const user = users.find(u => u.username === username);
+      // Find user from database
+      const user = await prisma.user.findUnique({
+        where: { username }
+      });
       
       if (!user) {
         set.status = 401;
         return { error: 'Invalid credentials' };
-      }
-
-      // For first time, set password
-      if (user.password === '$2a$10$YourHashedPasswordHere') {
-        user.password = await bcrypt.hash('admin123', 10);
       }
 
       // Verify password
@@ -141,7 +128,9 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
         return { error: 'Password must be at least 6 characters' };
       }
 
-      const user = users.find(u => u.username === username);
+      const user = await prisma.user.findUnique({
+        where: { username }
+      });
       
       if (!user) {
         set.status = 404;
@@ -155,8 +144,12 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
         return { error: 'Invalid old password' };
       }
 
-      // Hash new password
-      user.password = await bcrypt.hash(newPassword, 10);
+      // Hash and update new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword }
+      });
 
       return {
         success: true,
@@ -193,7 +186,9 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
         return { error: 'Invalid or expired token' };
       }
 
-      const user = users.find(u => u.id === payload.userId);
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId }
+      });
       
       if (!user) {
         set.status = 404;
