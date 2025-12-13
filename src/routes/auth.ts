@@ -7,8 +7,8 @@ import { loginSchema } from '../utils/validation';
 
 // Rate limiter for login endpoint
 const loginRateLimit = rateLimit({
-  duration: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Max 5 requests per 15 minutes
+  duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000, // 15 min prod, 5 min dev
+  max: process.env.NODE_ENV === 'production' ? 5 : 20, // 5 attempts prod, 20 attempts dev
   generator: (req, server) => {
     // Use IP address as identifier
     return server?.requestIP(req)?.address || 'unknown';
