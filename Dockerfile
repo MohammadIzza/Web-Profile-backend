@@ -1,11 +1,25 @@
 FROM oven/bun:1
+
 WORKDIR /app
-COPY . .
+
+# Prisma sering butuh openssl
+RUN apt-get update && apt-get install -y openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency + prisma dulu biar cache bagus
+COPY package.json bun.lock* ./
+COPY prisma ./prisma
 
 RUN bun install
+
+# Copy source
+COPY . .
+
+# Generate prisma client
 RUN bunx prisma generate
 
-ARG PORT
-EXPOSE ${PORT:-3000}
+# (Optional) informasi saja, tidak wajib
+EXPOSE 8000
 
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun run start"]
+# Jalankan migrate saat container start
+CMD ["sh", "-lc", "bunx prisma migrate deploy && bun run start"]
