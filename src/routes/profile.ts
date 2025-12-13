@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { profileSchema } from '../utils/validation';
 
 export const profileRoutes = new Elysia({ prefix: '/api/profile' })
-  .get('/', async () => {
+  .get('', async () => {
     try {
       const profiles = await prisma.profile.findMany();
       return profiles;
@@ -33,7 +33,7 @@ export const profileRoutes = new Elysia({ prefix: '/api/profile' })
   
   .use(authMiddleware)
   
-  .post('/', async ({ body, set }) => {
+  .post('', async ({ body, set }) => {
     try {
       // Validate input
       const validatedData = profileSchema.parse(body);

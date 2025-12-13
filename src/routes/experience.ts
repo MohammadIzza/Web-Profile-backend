@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { experienceSchema } from '../utils/validation';
 
 export const experienceRoutes = new Elysia({ prefix: '/api/experience' })
-  .get('/', async () => {
+  .get('', async () => {
     try {
       const experiences = await prisma.experience.findMany({
         orderBy: { startDate: 'desc' }
@@ -35,7 +35,7 @@ export const experienceRoutes = new Elysia({ prefix: '/api/experience' })
   
   .use(authMiddleware)
   
-  .post('/', async ({ body, set }) => {
+  .post('', async ({ body, set }) => {
     try {
       const validatedData = experienceSchema.parse(body);
       const experience = await prisma.experience.create({

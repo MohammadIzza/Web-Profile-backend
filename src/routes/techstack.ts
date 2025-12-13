@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { techStackSchema } from '../utils/validation';
 
 export const techstackRoutes = new Elysia({ prefix: '/api/techstack' })
-  .get('/', async () => {
+  .get('', async () => {
     try {
       const techstacks = await prisma.techStack.findMany({
         orderBy: { name: 'asc' }
@@ -35,7 +35,7 @@ export const techstackRoutes = new Elysia({ prefix: '/api/techstack' })
   
   .use(authMiddleware)
   
-  .post('/', async ({ body, set }) => {
+  .post('', async ({ body, set }) => {
     try {
       const validatedData = techStackSchema.parse(body);
       const techstack = await prisma.techStack.create({

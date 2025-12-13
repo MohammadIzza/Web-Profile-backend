@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { portfolioSchema } from '../utils/validation';
 
 export const portfolioRoutes = new Elysia({ prefix: '/api/portfolio' })
-  .get('/', async () => {
+  .get('', async () => {
     try {
       const portfolios = await prisma.portfolio.findMany({
         orderBy: { createdAt: 'desc' }
@@ -35,7 +35,7 @@ export const portfolioRoutes = new Elysia({ prefix: '/api/portfolio' })
   
   .use(authMiddleware)
   
-  .post('/', async ({ body, set }) => {
+  .post('', async ({ body, set }) => {
     try {
       const validatedData = portfolioSchema.parse(body);
       const portfolio = await prisma.portfolio.create({

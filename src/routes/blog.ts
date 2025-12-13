@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { blogSchema } from '../utils/validation';
 
 export const blogRoutes = new Elysia({ prefix: '/api/blog' })
-  .get('/', async () => {
+  .get('', async () => {
     try {
       const blogs = await prisma.blog.findMany({
         orderBy: { createdAt: 'desc' }
@@ -35,7 +35,7 @@ export const blogRoutes = new Elysia({ prefix: '/api/blog' })
   
   .use(authMiddleware)
   
-  .post('/', async ({ body, set }) => {
+  .post('', async ({ body, set }) => {
     try {
       const validatedData = blogSchema.parse(body);
       const blog = await prisma.blog.create({
