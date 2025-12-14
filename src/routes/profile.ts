@@ -59,8 +59,11 @@ export const profileRoutes = new Elysia({ prefix: '/api/profile' })
   
   .put('/:id', async ({ params, body, set }) => {
     try {
+      // Remove fields that shouldn't be updated (id, createdAt, updatedAt)
+      const { id, createdAt, updatedAt, ...updateData } = body as any;
+      
       // Validate input
-      const validatedData = profileSchema.partial().parse(body);
+      const validatedData = profileSchema.partial().parse(updateData);
       
       const profile = await prisma.profile.update({
         where: { id: Number(params.id) },
@@ -69,16 +72,22 @@ export const profileRoutes = new Elysia({ prefix: '/api/profile' })
       return profile;
     } catch (error: any) {
       console.error('Error updating profile:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        errors: error.errors,
+        body: body
+      });
       set.status = 400;
       
       if (error.errors) {
         return { 
           error: 'Validation failed', 
-          details: error.errors.map((e: any) => e.message)
+          details: error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`)
         };
       }
       
-      return { error: 'Failed to update profile' };
+      return { error: 'Failed to update profile', details: error.message };
     }
   })
   
