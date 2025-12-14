@@ -14,22 +14,8 @@ export const config = {
   uploadDir: 'uploads',
   jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
   cors: {
-    // ✅ gunakan headers.origin (lebih aman daripada request.headers)
-    origin: ({ headers }: any) => {
-      const origin = headers?.origin; // string | undefined
-      console.log('🌐 CORS origin check:', origin);
-      console.log('🌐 CORS allowed origins:', corsOrigins);
-      
-      if (!origin) {
-        console.log('✅ CORS: No origin header, allowing (same-origin)');
-        return true; // allow direct access / curl / same-origin
-      }
-      
-      const isAllowed = corsOrigins.includes(origin);
-      console.log(`🌐 CORS: ${isAllowed ? '✅ ALLOWED' : '❌ BLOCKED'} - ${origin}`);
-      
-      return isAllowed;
-    },
+    // Gunakan array langsung - lebih reliable untuk Elysia CORS
+    origin: corsOrigins.length > 0 ? corsOrigins : false,
 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

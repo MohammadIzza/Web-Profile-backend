@@ -6,28 +6,26 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { loginSchema } from '../utils/validation';
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
+  .onBeforeHandle(({ request }) => {
+    console.log('🟡 Before handle - Request method:', request.method);
+    console.log('🟡 Before handle - Request URL:', request.url);
+    console.log('🟡 Before handle - Origin:', request.headers.get('origin'));
+  })
   .post('/login', { 
-    beforeHandle: [
-      async ({ request, set }) => {
-        console.log('🟡 Rate limit check - Request method:', request.method);
-        console.log('🟡 Rate limit check - Request URL:', request.url);
-        console.log('🟡 Rate limit check - Origin:', request.headers.get('origin'));
+    beforeHandle: rateLimit({
+      duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000, // 15 min prod, 5 min dev
+      max: process.env.NODE_ENV === 'production' ? 5 : 20, // 5 attempts prod, 20 attempts dev
+      generator: (req, server) => {
+        const ip = server?.requestIP(req)?.address || 'unknown';
+        console.log('🟡 Rate limit generator - IP:', ip);
+        return ip;
       },
-      rateLimit({
-        duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000, // 15 min prod, 5 min dev
-        max: process.env.NODE_ENV === 'production' ? 5 : 20, // 5 attempts prod, 20 attempts dev
-        generator: (req, server) => {
-          const ip = server?.requestIP(req)?.address || 'unknown';
-          console.log('🟡 Rate limit generator - IP:', ip);
-          return ip;
-        },
-        onLimitExceeded: ({ request, set }) => {
-          console.log('🚫 Rate limit exceeded for:', request.url);
-          set.status = 429;
-          return { error: 'Too many requests. Please try again later.' };
-        },
-      })
-    ]
+      onLimitExceeded: ({ request, set }) => {
+        console.log('🚫 Rate limit exceeded for:', request.url);
+        set.status = 429;
+        return { error: 'Too many requests. Please try again later.' };
+      },
+    })
   }, async ({ body, set, request }) => {
     console.log('🔵 POST /api/auth/login handler CALLED');
     console.log('📦 Request body type:', typeof body);
