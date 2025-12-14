@@ -12,20 +12,21 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
     console.log('🟡 Before handle - Origin:', request.headers.get('origin'));
   })
   .post('/login', { 
-    beforeHandle: rateLimit({
-      duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000, // 15 min prod, 5 min dev
-      max: process.env.NODE_ENV === 'production' ? 5 : 20, // 5 attempts prod, 20 attempts dev
-      generator: (req, server) => {
-        const ip = server?.requestIP(req)?.address || 'unknown';
-        console.log('🟡 Rate limit generator - IP:', ip);
-        return ip;
-      },
-      onLimitExceeded: ({ request, set }) => {
-        console.log('🚫 Rate limit exceeded for:', request.url);
-        set.status = 429;
-        return { error: 'Too many requests. Please try again later.' };
-      },
-    })
+    // Sementara disable rate limit untuk debugging
+    // beforeHandle: rateLimit({
+    //   duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000,
+    //   max: process.env.NODE_ENV === 'production' ? 5 : 20,
+    //   generator: (req, server) => {
+    //     const ip = server?.requestIP(req)?.address || 'unknown';
+    //     console.log('🟡 Rate limit generator - IP:', ip);
+    //     return ip;
+    //   },
+    //   onLimitExceeded: ({ request, set }) => {
+    //     console.log('🚫 Rate limit exceeded for:', request.url);
+    //     set.status = 429;
+    //     return { error: 'Too many requests. Please try again later.' };
+    //   },
+    // })
   }, async ({ body, set, request }) => {
     console.log('🔵 POST /api/auth/login handler CALLED');
     console.log('📦 Request body type:', typeof body);
