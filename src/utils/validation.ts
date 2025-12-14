@@ -15,15 +15,15 @@ export const registerSchema = z.object({
 // Profile Schemas
 export const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  title: z.string().optional(),
-  bio: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  location: z.string().optional(),
-  avatar: z.string().optional(),
-  github: z.string().optional(),
-  linkedin: z.string().optional(),
-  twitter: z.string().optional(),
+  title: z.string().optional().nullable(),
+  bio: z.string().optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+  avatar: z.string().optional().nullable(),
+  github: z.string().optional().nullable(),
+  linkedin: z.string().optional().nullable(),
+  twitter: z.string().optional().nullable(),
 });
 
 // Portfolio Schemas

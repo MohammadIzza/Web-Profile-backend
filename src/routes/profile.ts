@@ -62,8 +62,16 @@ export const profileRoutes = new Elysia({ prefix: '/api/profile' })
       // Remove fields that shouldn't be updated (id, createdAt, updatedAt)
       const { id, createdAt, updatedAt, ...updateData } = body as any;
       
+      // Convert empty strings to null for optional fields
+      const cleanedData = Object.fromEntries(
+        Object.entries(updateData).map(([key, value]) => [
+          key,
+          value === '' ? null : value
+        ])
+      );
+      
       // Validate input
-      const validatedData = profileSchema.partial().parse(updateData);
+      const validatedData = profileSchema.partial().parse(cleanedData);
       
       const profile = await prisma.profile.update({
         where: { id: Number(params.id) },
