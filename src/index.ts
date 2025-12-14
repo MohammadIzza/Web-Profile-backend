@@ -14,6 +14,13 @@ import { uploadRoutes } from './routes/upload';
 
 validateEnv();
 
+// Log CORS config for debugging
+console.log('🔒 CORS Configuration:');
+console.log('  Origin:', config.cors.origin);
+console.log('  Methods:', config.cors.methods);
+console.log('  Allowed Headers:', config.cors.allowedHeaders);
+console.log('  Credentials:', config.cors.credentials);
+
 const app = new Elysia()
   .use(cors(config.cors))
   .use(requestLogger)

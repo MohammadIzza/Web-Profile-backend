@@ -1,24 +1,24 @@
 import { Elysia } from 'elysia';
 import bcrypt from 'bcryptjs';
-import { rateLimit } from 'elysia-rate-limit';
+// import { rateLimit } from 'elysia-rate-limit'; // Disabled temporarily
 import { prisma } from '../config/database';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { loginSchema } from '../utils/validation';
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
-  .post('/login', { 
-    beforeHandle: rateLimit({
-      duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000,
-      max: process.env.NODE_ENV === 'production' ? 5 : 20,
-      generator: (req, server) => {
-        return server?.requestIP(req)?.address || 'unknown';
-      },
-      onLimitExceeded: ({ request, set }) => {
-        set.status = 429;
-        return { error: 'Too many requests. Please try again later.' };
-      },
-    })
-  }, async ({ body, set }) => {
+  .post('/login', async ({ body, set }) => {
+    // Rate limit disabled temporarily
+    // beforeHandle: rateLimit({
+    //   duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000,
+    //   max: process.env.NODE_ENV === 'production' ? 5 : 20,
+    //   generator: (req, server) => {
+    //     return server?.requestIP(req)?.address || 'unknown';
+    //   },
+    //   onLimitExceeded: ({ request, set }) => {
+    //     set.status = 429;
+    //     return { error: 'Too many requests. Please try again later.' };
+    //   },
+    // })
     try {
       // Validate input
       const validatedData = loginSchema.parse(body);
