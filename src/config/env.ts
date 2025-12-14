@@ -5,6 +5,11 @@ const allowedOrigins = (process.env.CORS_ORIGIN ?? '')
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// Log CORS config on startup
+console.log('🔒 CORS Configuration:');
+console.log('  Environment:', isDevelopment ? 'development' : 'production');
+console.log('  Allowed Origins:', allowedOrigins.length > 0 ? allowedOrigins : 'NONE (will block all)');
+
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   databaseUrl: process.env.DATABASE_URL,
@@ -15,10 +20,20 @@ export const config = {
     // PAKAI FUNCTION biar header ACAO pasti ke-set sesuai Origin request
     origin: ({ request }: { request: Request }) => {
       const origin = request.headers.get('origin');
-      if (!origin) return false;
+      
+      // Log untuk debugging
+      if (origin) {
+        console.log(`🌐 CORS check - Origin: ${origin}`);
+      }
+
+      if (!origin) {
+        console.log('❌ CORS: No origin header');
+        return false;
+      }
 
       // allow localhost hanya di development
       if (isDevelopment && origin === 'http://localhost:5173') {
+        console.log('✅ CORS: Allowed (localhost in dev)');
         return true;
       }
 
@@ -29,7 +44,15 @@ export const config = {
       }
 
       // check allowed origins
-      return allowedOrigins.includes(origin);
+      const isAllowed = allowedOrigins.includes(origin);
+      if (isAllowed) {
+        console.log(`✅ CORS: Allowed - ${origin}`);
+      } else {
+        console.log(`❌ CORS: Blocked - ${origin} (not in allowed list)`);
+        console.log(`   Allowed origins:`, allowedOrigins);
+      }
+      
+      return isAllowed;
     },
 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
