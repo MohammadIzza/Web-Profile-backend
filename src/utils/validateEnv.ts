@@ -37,8 +37,10 @@ export function validateEnv(): void {
       console.warn('⚠️  WARNING: PORT not set, using default 3001');
     }
     
-    if (!process.env.CORS_ORIGIN) {
-      console.warn('⚠️  WARNING: CORS_ORIGIN not set, using default http://localhost:5173');
+    if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN.trim() === '') {
+      console.error('❌ ERROR: CORS_ORIGIN must be set in production!');
+      console.error('   Set CORS_ORIGIN to your frontend URL (e.g., https://your-app.vercel.app)');
+      throw new Error('CORS_ORIGIN is required in production');
     }
   }
   
