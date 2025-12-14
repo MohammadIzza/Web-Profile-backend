@@ -15,31 +15,47 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
         return server?.requestIP(req)?.address || 'unknown';
       },
     })
-  }, async ({ body, set }) => {
+  }, async ({ body, set, request }) => {
+    console.log('🔵 POST /api/auth/login handler CALLED');
+    console.log('📦 Request body type:', typeof body);
+    console.log('📦 Request body:', JSON.stringify(body, null, 2));
+    console.log('📦 Request headers:', Object.fromEntries(request.headers.entries()));
+    
     try {
       // Validate input
+      console.log('✅ Starting validation...');
       const validatedData = loginSchema.parse(body);
+      console.log('✅ Validation passed:', { username: validatedData.username });
       const { username, password } = validatedData;
 
       // Find user from database
+      console.log('🔍 Searching for user:', username);
       const user = await prisma.user.findUnique({
         where: { username }
       });
       
       if (!user) {
+        console.log('❌ User not found:', username);
         set.status = 401;
         return { error: 'Invalid credentials' };
       }
 
+      console.log('✅ User found:', { id: user.id, username: user.username });
+
       // Verify password
+      console.log('🔐 Verifying password...');
       const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {
+        console.log('❌ Invalid password');
         set.status = 401;
         return { error: 'Invalid credentials' };
       }
 
+      console.log('✅ Password verified');
+
       // Generate tokens
+      console.log('🎫 Generating tokens...');
       const payload = {
         userId: user.id,
         username: user.username,
@@ -48,7 +64,10 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       const accessToken = generateAccessToken(payload);
       const refreshToken = generateRefreshToken(payload);
 
-      return {
+      console.log('✅ Tokens generated successfully');
+      console.log('📤 Returning response...');
+
+      const response = {
         success: true,
         accessToken,
         refreshToken,
@@ -58,19 +77,34 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
           email: user.email,
         }
       };
+
+      console.log('✅ Response prepared:', { 
+        success: response.success, 
+        hasAccessToken: !!response.accessToken,
+        hasRefreshToken: !!response.refreshToken,
+        user: response.user 
+      });
+
+      return response;
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('❌ Login error occurred:');
+      console.error('Error type:', error?.constructor?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      console.error('Full error:', JSON.stringify(error, null, 2));
+      
       set.status = 400;
       
       if (error.errors) {
         // Zod validation errors
+        console.log('⚠️ Zod validation errors:', error.errors);
         return { 
           error: 'Validation failed', 
           details: error.errors.map((e: any) => e.message)
         };
       }
       
-      return { error: 'Login failed' };
+      return { error: 'Login failed', details: error?.message || 'Unknown error' };
     }
   })
 

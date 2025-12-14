@@ -4,5 +4,6 @@ export const requestLogger = new Elysia()
   .onRequest(({ request }) => {
     const timestamp = new Date().toISOString();
     const url = new URL(request.url);
-    console.log(`[${timestamp}] ${request.method} ${url.pathname}`);
+    const origin = request.headers.get('origin');
+    console.log(`[${timestamp}] ${request.method} ${url.pathname}${origin ? ` | Origin: ${origin}` : ''}`);
   });
