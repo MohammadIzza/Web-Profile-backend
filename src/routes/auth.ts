@@ -6,52 +6,43 @@ import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { loginSchema } from '../utils/validation';
 
 export const authRoutes = new Elysia({ prefix: '/api/auth' })
-  .onBeforeHandle(({ request }) => {
-    console.log('🟡 Before handle - Request method:', request.method);
-    console.log('🟡 Before handle - Request URL:', request.url);
-    console.log('🟡 Before handle - Origin:', request.headers.get('origin'));
-  })
-  .post('/login', async ({ body, set, request }) => {
-    console.log('🔵 POST /api/auth/login handler CALLED');
-    console.log('📦 Request body type:', typeof body);
-    console.log('📦 Request body:', JSON.stringify(body, null, 2));
-    console.log('📦 Request headers:', Object.fromEntries(request.headers.entries()));
-    
+  .post('/login', { 
+    beforeHandle: rateLimit({
+      duration: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 5 * 60 * 1000,
+      max: process.env.NODE_ENV === 'production' ? 5 : 20,
+      generator: (req, server) => {
+        return server?.requestIP(req)?.address || 'unknown';
+      },
+      onLimitExceeded: ({ request, set }) => {
+        set.status = 429;
+        return { error: 'Too many requests. Please try again later.' };
+      },
+    })
+  }, async ({ body, set }) => {
     try {
       // Validate input
-      console.log('✅ Starting validation...');
       const validatedData = loginSchema.parse(body);
-      console.log('✅ Validation passed:', { username: validatedData.username });
       const { username, password } = validatedData;
 
       // Find user from database
-      console.log('🔍 Searching for user:', username);
       const user = await prisma.user.findUnique({
         where: { username }
       });
       
       if (!user) {
-        console.log('❌ User not found:', username);
         set.status = 401;
         return { error: 'Invalid credentials' };
       }
 
-      console.log('✅ User found:', { id: user.id, username: user.username });
-
       // Verify password
-      console.log('🔐 Verifying password...');
       const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {
-        console.log('❌ Invalid password');
         set.status = 401;
         return { error: 'Invalid credentials' };
       }
 
-      console.log('✅ Password verified');
-
       // Generate tokens
-      console.log('🎫 Generating tokens...');
       const payload = {
         userId: user.id,
         username: user.username,
@@ -60,10 +51,7 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
       const accessToken = generateAccessToken(payload);
       const refreshToken = generateRefreshToken(payload);
 
-      console.log('✅ Tokens generated successfully');
-      console.log('📤 Returning response...');
-
-      const response = {
+      return {
         success: true,
         accessToken,
         refreshToken,
@@ -73,34 +61,19 @@ export const authRoutes = new Elysia({ prefix: '/api/auth' })
           email: user.email,
         }
       };
-
-      console.log('✅ Response prepared:', { 
-        success: response.success, 
-        hasAccessToken: !!response.accessToken,
-        hasRefreshToken: !!response.refreshToken,
-        user: response.user 
-      });
-
-      return response;
     } catch (error: any) {
-      console.error('❌ Login error occurred:');
-      console.error('Error type:', error?.constructor?.name);
-      console.error('Error message:', error?.message);
-      console.error('Error stack:', error?.stack);
-      console.error('Full error:', JSON.stringify(error, null, 2));
-      
+      console.error('Login error:', error);
       set.status = 400;
       
       if (error.errors) {
         // Zod validation errors
-        console.log('⚠️ Zod validation errors:', error.errors);
         return { 
           error: 'Validation failed', 
           details: error.errors.map((e: any) => e.message)
         };
       }
       
-      return { error: 'Login failed', details: error?.message || 'Unknown error' };
+      return { error: 'Login failed' };
     }
   })
 

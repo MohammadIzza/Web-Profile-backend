@@ -2,11 +2,6 @@ const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
   : ['http://localhost:5173'];
 
-console.log('🔒 CORS Configuration on startup:');
-console.log('  CORS_ORIGIN env:', process.env.CORS_ORIGIN || '(not set)');
-console.log('  Parsed allowed origins:', corsOrigins);
-console.log('  NODE_ENV:', process.env.NODE_ENV || 'development');
-
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   databaseUrl: process.env.DATABASE_URL,

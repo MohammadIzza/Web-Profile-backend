@@ -38,8 +38,30 @@ export const blogRoutes = new Elysia({ prefix: '/api/blog' })
   .post('', async ({ body, set }) => {
     try {
       const validatedData = blogSchema.parse(body);
+      
+      // Generate slug from title if not provided
+      let slug = validatedData.slug;
+      if (!slug && validatedData.title) {
+        slug = validatedData.title
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '');
+        
+        // Ensure slug is unique
+        let uniqueSlug = slug;
+        let counter = 1;
+        while (await prisma.blog.findUnique({ where: { slug: uniqueSlug } })) {
+          uniqueSlug = `${slug}-${counter}`;
+          counter++;
+        }
+        slug = uniqueSlug;
+      }
+      
       const blog = await prisma.blog.create({
-        data: validatedData
+        data: {
+          ...validatedData,
+          slug: slug || `blog-${Date.now()}`
+        }
       });
       return blog;
     } catch (error: any) {
@@ -55,9 +77,39 @@ export const blogRoutes = new Elysia({ prefix: '/api/blog' })
   .put('/:id', async ({ params, body, set }) => {
     try {
       const validatedData = blogSchema.partial().parse(body);
+      
+      // Generate slug if title is updated but slug is not provided
+      let updateData: any = { ...validatedData };
+      if (validatedData.title && !validatedData.slug) {
+        const existingBlog = await prisma.blog.findUnique({
+          where: { id: Number(params.id) }
+        });
+        
+        if (existingBlog && existingBlog.title !== validatedData.title) {
+          let slug = validatedData.title
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '');
+          
+          // Ensure slug is unique (excluding current blog)
+          let uniqueSlug = slug;
+          let counter = 1;
+          while (await prisma.blog.findFirst({ 
+            where: { 
+              slug: uniqueSlug,
+              id: { not: Number(params.id) }
+            } 
+          })) {
+            uniqueSlug = `${slug}-${counter}`;
+            counter++;
+          }
+          updateData.slug = uniqueSlug;
+        }
+      }
+      
       const blog = await prisma.blog.update({
         where: { id: Number(params.id) },
-        data: validatedData
+        data: updateData
       });
       return blog;
     } catch (error: any) {
